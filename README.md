@@ -1,6 +1,6 @@
 # sway-window
 
-The default window selecter of rofi does not play well enough with sway.
+This is a rofi-script to select windows in swaywm. The default window selector of rofi does not play well enough with sway for me.
 
 ## Install
 
@@ -17,5 +17,5 @@ The default window selecter of rofi does not play well enough with sway.
 ## Dependencies
 
 - swaywm
-- python>3.5
+- python>3.6
 - [rofi-wayland](https://github.com/lbonn/rofi)
