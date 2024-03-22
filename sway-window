@@ -4,6 +4,8 @@ import json
 import os
 import subprocess
 
+from configparser import ConfigParser as _cp
+
 
 def get_nodes(node_list, a):
     if "nodes" in a:
@@ -36,16 +38,32 @@ def get_desktop_files():
                         files.append((entry, e.read()))
     return files
 
-def resolve_desktop_file_data(name, desktop_files):
-    for df, content in desktop_files:
-        if name in content:
-            app_name, icon = "", ""
-            for line in content.splitlines():
-                if not icon and line.startswith("Icon="):
-                    _, icon = line.split("=", 1)
-                if not app_name and line.startswith("Name="):
-                    _, app_name = line.split("=", 1)
-            return app_name, icon 
+def get_desktop_file_values(content, fallback):
+    app_name, icon = "", ""
+    for line in content.splitlines():
+        if not icon and line.startswith("Icon="):
+            _, icon = line.split("=", 1)
+        if not app_name and line.startswith("Name="):
+            _, app_name = line.split("=", 1)
+    return app_name or fallback, icon or fallback
+
+def resolve_desktop_file_data(name, title, desktop_files):
+    name = name.lower()
+    alt_name = title.split(" - ")[-1].lower()
+
+    for _pattern in [
+        name,
+        alt_name,
+        name.lower(),
+        alt_name.lower(),
+        name.replace(" ", "-"),
+        alt_name.replace(" ", "-")
+    ]:
+        for df, content in desktop_files:
+            if f"{_pattern}.desktop" in str(df):
+                return get_desktop_file_values(content, name)
+            if _pattern in [_.split("=", 1)[-1].lower() for _ in content.splitlines()]:
+                return get_desktop_file_values(content, name)
     return name, name
 
 def normalize_names(window):
@@ -64,7 +82,7 @@ def parse_window_data(windows, desktop_files):
     parsed_windows = []
     for window in windows:
         app_name, title = normalize_names(window)
-        app_name, icon = resolve_desktop_file_data(app_name, desktop_files)
+        app_name, icon = resolve_desktop_file_data(app_name, title, desktop_files)
         parsed_windows.append({
                 "id": window["id"],
                 "app": app_name,
